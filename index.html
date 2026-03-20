@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Drops - Gacha de Vida</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;700&display=swap');
+
+        body {
+            background: #1a1a1a;
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            color: white;
+        }
+
+        .brawl-font {
+            font-family: 'Bangers', cursive;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        /* Rarezas */
+        .rare { --color: #00d2ff; --shadow: #0084ff; }
+        .super-rare { --color: #a200ff; --shadow: #7a00cc; }
+        .epic { --color: #ff00e1; --shadow: #c400ad; }
+        .mythic { --color: #ff3c00; --shadow: #cc3000; }
+        .legendary { --color: #ffcc00; --shadow: #e6b800; }
+
+        /* Animación del Starr Drop */
+        .drop-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .drop-container:active {
+            transform: scale(0.92);
+        }
+
+        .drop-sphere {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, white, var(--color));
+            box-shadow: 0 0 40px var(--shadow), inset -10px -10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .shake {
+            animation: shakeAnim 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shakeAnim {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .upgrade-flash {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .animate-flash {
+            animation: flashAnim 0.5s ease-out;
+        }
+
+        @keyframes flashAnim {
+            0% { opacity: 0.8; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.5); }
+        }
+
+        .reward-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--color);
+            border-radius: 20px;
+            transform: scale(0);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .reward-card.show {
+            transform: scale(1);
+        }
+
+        .settings-panel {
+            background: rgba(0, 0, 0, 0.9);
+            position: fixed;
+            top: 0; right: -100%;
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            transition: 0.3s;
+            z-index: 50;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .settings-panel.open {
+            right: 0;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-4">
+
+    <!-- Header -->
+    <div class="fixed top-6 left-6 z-10">
+        <h1 class="brawl-font text-4xl italic text-yellow-400">LIFE DROPS</h1>
+        <p class="text-xs uppercase tracking-widest text-gray-400">Toca para mejorar tu vida</p>
+    </div>
+
+    <!-- Botón Ajustes -->
+    <button onclick="toggleSettings()" class="fixed top-6 right-6 bg-white/10 p-3 rounded-full hover:bg-white/20 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+
+    <!-- App State: Gacha -->
+    <div id="game-view" class="flex flex-col items-center gap-12">
+        
+        <div id="rarity-text" class="brawl-font text-5xl italic opacity-0 transition-opacity duration-300">ESPECIAL</div>
+
+        <div class="drop-container rare" id="drop-box">
+            <div class="drop-sphere">
+                <div class="brawl-font text-8xl opacity-30">?</div>
+                <div id="flash" class="upgrade-flash"></div>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <p id="instruction" class="text-white/60 animate-pulse font-bold tracking-tighter">TOCA PARA EMPEZAR</p>
+        </div>
+        
+        <!-- New action buttons: Ajustar + Encuesta -->
+        <div class="flex gap-4">
+            <button onclick="toggleSettings()" class="brawl-font bg-white/10 px-4 py-2 rounded-full hover:bg-white/20 transition">Ajustar Life Drop</button>
+            <button onclick="toggleSurvey()" class="brawl-font bg-white/10 px-4 py-2 rounded-full hover:bg-white/20 transition">Encuesta</button>
+        </div>
+    </div>
+
+    <!-- App State: Reward -->
+    <div id="reward-view" class="hidden flex flex-col items-center gap-6">
+        <div id="reward-card" class="reward-card p-12 text-center flex flex-col items-center gap-4">
+            <div id="reward-rarity" class="brawl-font text-2xl uppercase italic">¡ÉPICO!</div>
+            <div id="reward-name" class="text-4xl font-black italic max-w-xs leading-none">IR AL CINE</div>
+            <div class="h-1 w-24 bg-white/20 my-4"></div>
+            <p class="text-sm text-white/60">RECOMPENSA DE VIDA OBTENIDA</p>
+        </div>
+        
+        <button onclick="resetGame()" class="brawl-font bg-white text-black px-8 py-3 rounded-full hover:scale-110 transition active:scale-95 text-xl">
+            ¡GENIAL!
+        </button>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="settings" class="settings-panel">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="brawl-font text-3xl">MIS PREMIOS</h2>
+            <button onclick="toggleSettings()" class="text-red-500">Cerrar</button>
+        </div>
+        
+        <div id="reward-editor" class="flex flex-col gap-6">
+            <!-- Dynamic inputs go here -->
+        </div>
+        
+        <div class="mt-8 p-4 bg-yellow-400/10 border border-yellow-400/30 rounded-lg">
+            <p class="text-xs text-yellow-400">Define tus propios premios para cada rareza. Sepáralos por comas.</p>
+        </div>
+
+        <div class="mt-6 p-4 bg-white/5 border border-white/10 rounded-lg">
+            <h3 class="font-bold">Donaciones</h3>
+            <p class="text-xs text-white/60">Aceptamos donaciones vía Ko-fi. Reemplaza el enlace con tu perfil de Ko-fi.</p>
+            <div class="mt-3">
+                <a id="donate-link" href="https://ko-fi.com/maximilianoabascal" target="_blank" class="brawl-font bg-yellow-400 text-black px-4 py-2 rounded-full inline-block">Donar (Ko-fi)</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Survey Panel -->
+    <div id="survey" class="settings-panel" style="max-width:460px;">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="brawl-font text-2xl">Encuesta rápida</h2>
+            <button onclick="toggleSurvey()" class="text-red-500">Cerrar</button>
+        </div>
+
+        <div class="space-y-4">
+            <p class="text-sm text-white/70">Selecciona el rol que mejor te describe para ajustar los premios:</p>
+            <div>
+                <label class="inline-flex items-center gap-2"><input type="radio" name="profile" value="general"> General</label>
+            </div>
+            <div>
+                <label class="inline-flex items-center gap-2"><input type="radio" name="profile" value="student"> Estudiante</label>
+            </div>
+            <div>
+                <label class="inline-flex items-center gap-2"><input type="radio" name="profile" value="teacher"> Profesor</label>
+            </div>
+            <div>
+                <label class="inline-flex items-center gap-2"><input type="radio" name="profile" value="professional"> Profesional</label>
+            </div>
+
+            <div class="flex gap-3 mt-4">
+                <button onclick="saveSurveyProfile()" class="brawl-font bg-white text-black px-4 py-2 rounded-full">Guardar</button>
+                <button onclick="clearProfile()" class="brawl-font bg-white/10 px-4 py-2 rounded-full">Borrar perfil</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const rarities = [
+            { id: 'rare', name: 'Especial', color: '#00d2ff', shadow: '#0084ff', chance: 0.5 },
+            { id: 'super-rare', name: 'Superespecial', color: '#a200ff', shadow: '#7a00cc', chance: 0.3 },
+            { id: 'epic', name: 'Épico', color: '#ff00e1', shadow: '#c400ad', chance: 0.15 },
+            { id: 'mythic', name: 'Mítico', color: '#ff3c00', shadow: '#cc3000', chance: 0.04 },
+            { id: 'legendary', name: 'Legendario', color: '#ffcc00', shadow: '#e6b800', chance: 0.01 }
+        ];
+
+        let defaultRewards = {
+            'rare': ['Caminar 15 min', 'Un snack pequeño', 'Escuchar un podcast', 'Mirar el atardecer'],
+            'super-rare': ['Jugar 30 min', 'Un café especial', 'Leer 20 páginas', 'Siesta de 20 min'],
+            'epic': ['Ir al cine', 'Cenar fuera', 'Comprar un libro', 'Noche de juegos'],
+            'mythic': ['Día libre de trabajo', 'Viaje corto', 'Comprar gadget nuevo', 'Masaje profesional'],
+            'legendary': ['VIAJE DE FIN DE SEMANA', 'RENOVACIÓN TOTAL', 'COMPRA IMPORTANTE', 'EXPERIENCIA DE LUJO']
+        };
+
+        let userRewards = JSON.parse(localStorage.getItem('lifeDropsRewards')) || defaultRewards;
+        
+        let currentRarityIndex = 0;
+        let taps = 0;
+        const maxTaps = 4; // Toques antes de abrirse
+
+        const viewBox = document.getElementById('drop-box');
+        const flash = document.getElementById('flash');
+        const rarityText = document.getElementById('rarity-text');
+        const instruction = document.getElementById('instruction');
+
+        function toggleSettings() {
+            document.getElementById('settings').classList.toggle('open');
+        }
+
+        function initSettings() {
+            const container = document.getElementById('reward-editor');
+            container.innerHTML = '';
+            rarities.forEach(r => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <label class="block text-xs uppercase font-bold mb-1" style="color: ${r.color}">${r.name}</label>
+                    <textarea 
+                        class="w-full bg-white/5 border border-white/20 p-2 rounded text-sm h-20"
+                        onchange="updateRewards('${r.id}', this.value)"
+                    >${userRewards[r.id].join(', ')}</textarea>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateRewards(rarityId, value) {
+            userRewards[rarityId] = value.split(',').map(s => s.trim()).filter(s => s !== '');
+            localStorage.setItem('lifeDropsRewards', JSON.stringify(userRewards));
+        }
+
+        viewBox.addEventListener('click', () => {
+            if (taps >= maxTaps) return;
+
+            taps++;
+            viewBox.classList.remove('shake');
+            void viewBox.offsetWidth; // Trigger reflow
+            viewBox.classList.add('shake');
+
+            // Lógica de "Upgrade"
+            // Intentar subir de rareza (excepto si ya es legendario)
+            if (currentRarityIndex < rarities.length - 1) {
+                // Probabilidad de mejora: 40% por cada toque
+                if (Math.random() < 0.4) {
+                    currentRarityIndex++;
+                    upgradeEffect();
+                }
+            }
+
+            if (taps === maxTaps) {
+                openDrop();
+            } else {
+                instruction.innerText = `¡TOCA MÁS! (${maxTaps - taps})`;
+            }
+        });
+
+        function upgradeEffect() {
+            const r = rarities[currentRarityIndex];
+            
+            // Actualizar visuales
+            viewBox.style.setProperty('--color', r.color);
+            viewBox.style.setProperty('--shadow', r.shadow);
+            
+            rarityText.innerText = r.name.toUpperCase();
+            rarityText.style.color = r.color;
+            rarityText.style.opacity = '1';
+
+            flash.classList.remove('animate-flash');
+            void flash.offsetWidth;
+            flash.classList.add('animate-flash');
+        }
+
+        function openDrop() {
+            instruction.innerText = "¡ABRIENDO!";
+            setTimeout(() => {
+                showReward();
+            }, 600);
+        }
+
+        function showReward() {
+            document.getElementById('game-view').classList.add('hidden');
+            document.getElementById('reward-view').classList.remove('hidden');
+            
+            const r = rarities[currentRarityIndex];
+            const rewardList = userRewards[r.id];
+            const randomReward = rewardList[Math.floor(Math.random() * rewardList.length)];
+
+            const card = document.getElementById('reward-card');
+            card.style.setProperty('--color', r.color);
+            
+            document.getElementById('reward-rarity').innerText = `¡${r.name}!`;
+            document.getElementById('reward-rarity').style.color = r.color;
+            document.getElementById('reward-name').innerText = randomReward;
+
+            setTimeout(() => {
+                card.classList.add('show');
+            }, 100);
+        }
+
+        function resetGame() {
+            currentRarityIndex = 0;
+            taps = 0;
+            
+            document.getElementById('reward-card').classList.remove('show');
+            document.getElementById('reward-view').classList.add('hidden');
+            document.getElementById('game-view').classList.remove('hidden');
+            
+            const r = rarities[0];
+            viewBox.style.setProperty('--color', r.color);
+            viewBox.style.setProperty('--shadow', r.shadow);
+            rarityText.style.opacity = '0';
+            instruction.innerText = "TOCA PARA EMPEZAR";
+        }
+
+        // Survey / profile reward sets
+        const personaRewards = {
+            'general': defaultRewards,
+            'student': {
+                'rare': ['Estirar 5 min', 'Beber agua', 'Respirar profundo', 'Mini descanso de 10 min'],
+                'super-rare': ['Estudiar con técnica Pomodoro 30 min', 'Un snack y té', 'Leer artículo interesante', 'Paseo corto'],
+                'epic': ['Ir al cine', 'Salir con amigos', 'Comprar material escolar', 'Noche de descanso'],
+                'mythic': ['Día libre de estudio planificado', 'Viaje corto con amigos', 'Compra de gadgets', 'Sesión de relax profesional'],
+                'legendary': ['Viaje de fin de semana', 'Gadget tope de gama', 'Experiencia única', 'Regalo especial']
+            },
+            'teacher': {
+                'rare': ['Tomar un café', 'Caminar 10 min', 'Organizar clases 15 min', 'Escuchar música'],
+                'super-rare': ['Tiempo para preparar material', 'Leer un libro', 'Un almuerzo tranquilo', 'Siesta corta'],
+                'epic': ['Cena fuera', 'Ir al teatro', 'Comprar un libro profesional', 'Noche de cine'],
+                'mythic': ['Día libre', 'Viaje de descanso', 'Curso pagado', 'Masaje profesional'],
+                'legendary': ['Viaje de fin de semana', 'Renovación completa', 'Compra importante', 'Experiencia de lujo']
+            },
+            'professional': {
+                'rare': ['Tomar un café especial', 'Respirar y estirar', 'Paseo corto', 'Desconectar 10 min'],
+                'super-rare': ['Trabajar en hobby 30 min', 'Salir a caminar', 'Leer 20 páginas', 'Almuerzo especial'],
+                'epic': ['Cena con amigos', 'Noche de cine', 'Comprar algo pequeño', 'Actividad social'],
+                'mythic': ['Día libre de trabajo', 'Fin de semana corto', 'Spa o masaje', 'Compra grande'],
+                'legendary': ['Viaje de lujo', 'Experiencia premium', 'Compra importante', 'Evento exclusivo']
+            }
+        };
+
+        function toggleSurvey() {
+            document.getElementById('survey').classList.toggle('open');
+        }
+
+        function initSurvey() {
+            // Set radio according to saved profile
+            const profile = localStorage.getItem('lifeDropsProfile') || 'general';
+            const radios = document.getElementsByName('profile');
+            radios.forEach(r => { if (r.value === profile) r.checked = true; });
+        }
+
+        function saveSurveyProfile() {
+            const radios = document.getElementsByName('profile');
+            let chosen = 'general';
+            radios.forEach(r => { if (r.checked) chosen = r.value; });
+            localStorage.setItem('lifeDropsProfile', chosen);
+            applyProfileRewards(chosen);
+            initSettings();
+            toggleSurvey();
+        }
+
+        function clearProfile() {
+            localStorage.removeItem('lifeDropsProfile');
+            localStorage.removeItem('lifeDropsRewards');
+            userRewards = defaultRewards;
+            initSettings();
+            toggleSurvey();
+        }
+
+        function applyProfileRewards(profile) {
+            // If profile has a specific mapping, use it, otherwise keep default
+            if (profile && personaRewards[profile]) {
+                userRewards = Object.assign({}, personaRewards[profile]);
+            } else {
+                userRewards = defaultRewards;
+            }
+            localStorage.setItem('lifeDropsRewards', JSON.stringify(userRewards));
+        }
+
+        // Init
+        // set donate link to your Ko-fi profile
+        const donateLink = document.getElementById('donate-link');
+        if (donateLink) donateLink.href = 'https://ko-fi.com/maximilianoabascal';
+
+        const savedProfile = localStorage.getItem('lifeDropsProfile');
+        if (savedProfile) applyProfileRewards(savedProfile);
+
+        initSettings();
+        initSurvey();
+    </script>
+</body>
+</html>
